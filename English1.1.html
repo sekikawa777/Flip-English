@@ -2,62 +2,52 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>英会話復習＆発音採点アプリ</title>
     <style>
         * {
             box-sizing: border-box;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 0;
         }
         body {
             background-color: #f0f4f8;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            margin: 0;
             padding: 10px;
         }
         .container {
             width: 100%;
-            max-width: 420px;
-            height: 100%;
-            max-height: 750px;
+            max-width: 500px;
             background: white;
             border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             padding: 16px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            text-align: center;
         }
         h1 {
             font-size: 1.1rem;
             color: #333;
-            text-align: center;
-            margin-bottom: 8px;
+            margin: 0 0 10px 0;
         }
-        .top-section {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+        /* カテゴリー選択のスタイル */
         .category-select-container {
+            margin-bottom: 10px;
             text-align: left;
         }
         .category-label {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: bold;
             color: #495057;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
             display: block;
         }
         .category-select {
             width: 100%;
             padding: 8px;
-            border-radius: 6px;
+            border-radius: 8px;
             border: 2px solid #007bff;
             background-color: #f8f9fa;
             font-size: 0.9rem;
@@ -66,113 +56,96 @@
             outline: none;
             cursor: pointer;
         }
+        /* モード切替ボタン */
         .mode-buttons {
             display: flex;
-            gap: 6px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
         .mode-btn {
             flex: 1;
-            padding: 6px;
+            padding: 8px;
             border: 2px solid #007bff;
             background: white;
             color: #007bff;
-            border-radius: 6px;
-            font-size: 0.85rem;
+            border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
+            font-size: 0.9rem;
         }
         .mode-btn.active {
             background: #007bff;
             color: white;
         }
+        /* 速度調整 */
         .rate-control {
             background: #e9ecef;
-            border-radius: 6px;
-            padding: 6px 10px;
+            border-radius: 8px;
+            padding: 6px 12px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: #495057;
             font-weight: bold;
         }
         .rate-control input[type=range] {
             flex: 1;
-            margin: 0 8px;
+            margin: 0 10px;
             cursor: pointer;
         }
-        .shuffle-btn {
-            background: #ffc107;
-            color: #212529;
-            border: none;
-            padding: 6px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-        }
-        .progress-indicator {
-            text-align: center;
-            font-size: 0.8rem;
-            color: #666;
-            margin: 2px 0;
-        }
-        
-        /* カード部分のコンパクト化 */
+        /* カードスタイル */
         .card {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 15px 10px;
+            border-radius: 12px;
+            padding: 15px 12px;
             min-height: 120px;
-            max-height: 140px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             cursor: pointer;
+            margin-bottom: 10px;
             transition: transform 0.2s;
         }
         .card:hover {
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
         .japanese {
             font-size: 1rem;
             font-weight: bold;
             color: #212529;
             margin-bottom: 8px;
-            text-align: center;
         }
         .english {
             font-size: 1rem;
             color: #28a745;
             font-weight: bold;
             display: none;
-            text-align: center;
         }
         .hint {
             font-size: 0.75rem;
             color: #888;
             margin-top: 6px;
         }
-
-        /* 音声セクション */
+        /* 発音判定セクション */
         .speech-section {
             background: #f1f3f5;
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 10px;
-            text-align: center;
+            margin-bottom: 10px;
         }
         .mic-btn {
             background: #dc3545;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 10px 16px;
+            border-radius: 25px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             transition: background 0.2s;
         }
         .mic-btn.recording {
@@ -187,7 +160,7 @@
         }
         .speech-result {
             margin-top: 6px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: #495057;
             line-height: 1.3;
         }
@@ -197,30 +170,30 @@
             padding: 2px 10px;
             border-radius: 10px;
             font-weight: bold;
-            font-size: 0.95rem;
+            font-size: 1rem;
         }
         .score-100 { background: #d4edda; color: #155724; }
         .score-good { background: #cce5ff; color: #004085; }
         .score-try { background: #fff3cd; color: #856404; }
 
-        /* クイズオプション */
+        /* クイズスタイル */
         .quiz-option {
             display: block;
             width: 100%;
             padding: 10px;
-            margin: 5px 0;
+            margin: 6px 0;
             background: #f8f9fa;
             border: 1px solid #ced4da;
-            border-radius: 6px;
+            border-radius: 8px;
             text-align: left;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
         .quiz-option:hover { background: #e2e6ea; }
         .quiz-option.correct { background: #d4edda; border-color: #28a745; color: #155724; }
         .quiz-option.wrong { background: #f8d7da; border-color: #dc3545; color: #721c24; }
 
-        /* 下部コントロール */
+        /* コントロール */
         .controls {
             display: flex;
             justify-content: space-between;
@@ -234,55 +207,79 @@
             padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
-        .audio-btn, .copy-btn {
+        .shuffle-btn {
+            background: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+        .audio-btn {
+            background: #17a2b8;
             color: white;
             border: none;
             padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .audio-btn { background: #17a2b8; }
-        .copy-btn { background: #28a745; }
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="top-section">
-        <h1>英会話フレーズ学習</h1>
-        
-        <div class="category-select-container">
-            <label class="category-label" for="category-select">📁 カテゴリーを選択:</label>
-            <select id="category-select" class="category-select" onchange="changeCategory(this.value)">
-                <option value="shopping">🛒 ショッピング (100選)</option>
-                <option value="travel">✈️ 旅行・交通 (100選)</option>
-                <option value="daily">💬 日常会話 (100選)</option>
-                <option value="business">💼 ビジネス (100選)</option>
-            </select>
-        </div>
-
-        <div class="mode-buttons">
-            <button class="mode-btn active" onclick="switchMode('flashcard')">暗記カード</button>
-            <button class="mode-btn" onclick="switchMode('quiz')">4択クイズ</button>
-        </div>
-
-        <div class="rate-control">
-            <span>再生速度:</span>
-            <input type="range" id="speech-rate" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateRateLabel(this.value)">
-            <span id="rate-value">1.0x</span>
-        </div>
-
-        <button class="shuffle-btn" onclick="shuffleCurrentData()">🔀 順番をシャッフルする</button>
+    <h1>英会話フレーズ学習</h1>
+    
+    <!-- カテゴリー選択ドロップダウン -->
+    <div class="category-select-container">
+        <label class="category-label" for="category-select">📁 カテゴリーを選択:</label>
+        <select id="category-select" class="category-select" onchange="changeCategory(this.value)">
+            <option value="shopping">🛒 ショッピング (100選)</option>
+            <option value="travel">✈️ 旅行・交通 (100選)</option>
+            <option value="daily">💬 日常会話 (100選)</option>
+            <option value="business">💼 ビジネス (100選)</option>
+        </select>
     </div>
 
-    <div class="progress-indicator" id="progress">1 / 100</div>
+    <div class="mode-buttons">
+        <button class="mode-btn active" onclick="switchMode('flashcard')">暗記カード</button>
+        <button class="mode-btn" onclick="switchMode('quiz')">4択クイズ</button>
+    </div>
 
+    <!-- 速度調整スライダー -->
+    <div class="rate-control">
+        <span>再生速度:</span>
+        <input type="range" id="speech-rate" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateRateLabel(this.value)">
+        <span id="rate-value">1.0x</span>
+    </div>
+
+    <button class="shuffle-btn" onclick="shuffleCurrentData()">🔀 順番をシャッフルする</button>
+
+    <div id="progress" style="margin-bottom: 8px; font-size: 0.85rem; color: #666;">1 / 100</div>
+
+    <!-- 暗記カードモード -->
     <div id="flashcard-mode">
         <div class="card" onclick="toggleAnswer()">
             <div class="japanese" id="fc-japanese"></div>
@@ -290,29 +287,36 @@
             <div class="hint" id="fc-hint">タップで答えを表示</div>
         </div>
 
-        <div class="speech-section" style="margin-top: 8px;">
+        <!-- 発音判定セクション -->
+        <div class="speech-section">
             <button class="mic-btn" id="mic-btn" onclick="toggleSpeechRecognition()">🎤 発音をチェックする</button>
             <div class="speech-result" id="speech-result">ボタンを押して英語を発音してください</div>
             <div id="score-container"></div>
         </div>
+
+        <div class="controls">
+            <button class="nav-btn" onclick="prevCard()">前へ</button>
+            <button class="audio-btn" onclick="speakCurrent()" title="お手本">🔊</button>
+            <button class="copy-btn" onclick="copyCurrentText()" title="コピー">📋</button>
+            <button class="nav-btn" onclick="nextCard()">次へ</button>
+        </div>
     </div>
 
+    <!-- クイズモード -->
     <div id="quiz-mode" style="display: none;">
-        <div class="japanese" id="quiz-japanese" style="margin-bottom: 10px; min-height: 40px; display: flex; align-items: center; justify-content: center;"></div>
+        <div class="japanese" id="quiz-japanese" style="margin-bottom: 15px;"></div>
         <div id="quiz-options"></div>
-    </div>
-
-    <div class="controls">
-        <button class="nav-btn" onclick="prevItem()">前へ</button>
-        <button class="audio-btn" onclick="speakCurrent()" title="お手本">🔊</button>
-        <button class="copy-btn" onclick="copyCurrentText()" title="コピー">📋</button>
-        <button class="nav-btn" onclick="nextItem()">次へ</button>
+        <div class="controls" style="margin-top: 15px;">
+            <button class="nav-btn" onclick="prevQuiz()">前へ</button>
+            <button class="nav-btn" onclick="nextQuiz()">次へ</button>
+        </div>
     </div>
 </div>
 
 <script>
+// カテゴリー別100フレーズデータ
 const categoryData = {
-    shopping: Array.from({length: 100}, (_, i) => [
+    shopping: [
         { ja: "ただ見ているだけです、ありがとうございます。", en: "I'm just browsing, thank you." },
         { ja: "これを探しています。", en: "I'm looking for this." },
         { ja: "これのMサイズはありますか？", en: "Do you have this in medium?" },
@@ -413,8 +417,8 @@ const categoryData = {
         { ja: "賞味期限はいつまでですか？", en: "When is the expiration date?" },
         { ja: "常温で保存できますか？", en: "Can this be stored at room temperature?" },
         { ja: "買い物を楽しめました！", en: "I enjoyed shopping here!" }
-    ][i]),
-    travel: Array.from({length: 100}, (_, i) => [
+    ],
+    travel: [
         { ja: "チェックインをお願いします。", en: "I'd like to check in, please." },
         { ja: "窓側の席をお願いできますか？", en: "Could I get a window seat, please?" },
         { ja: "通路側の席をお願いできますか？", en: "Could I get an aisle seat, please?" },
@@ -514,8 +518,8 @@ const categoryData = {
         { ja: "またここを訪れたいです。", en: "I would love to visit here again." },
         { ja: "親切にしてくれてありがとう！", en: "Thank you for being so kind!" },
         { ja: "無事に到着しました。", en: "I arrived safely." }
-    ][i]),
-    daily: Array.from({length: 100}, (_, i) => [
+    ],
+    daily: [
         { ja: "今日はとてもいい天気ですね！", en: "It's a beautiful day today!" },
         { ja: "週末は何をして過ごす予定ですか？", en: "Do you have any plans for the weekend?" },
         { ja: "久しぶりですね！元気でしたか？", en: "Long time no see! How have you been?" },
@@ -616,8 +620,8 @@ const categoryData = {
         { ja: "気をつけて帰ってね。", en: "Get home safe!" },
         { ja: "今日は楽しかった！", en: "I had fun today!" },
         { ja: "またね！", en: "Bye for now!" }
-    ][i]),
-    business: Array.from({length: 100}, (_, i) => [
+    ],
+    business: [
         { ja: "お時間をいただきありがとうございます。", en: "Thank you for your time today." },
         { ja: "お会いできて光栄です。", en: "It's an honor to meet you." },
         { ja: "お手数をおかけしてすみません。", en: "I'm sorry for the inconvenience." },
@@ -657,7 +661,7 @@ const categoryData = {
         { ja: "声が少し途切れています。", en: "Your voice is cutting out a bit." },
         { ja: "画面を共有いたします。", en: "I will share my screen." },
         { ja: "ミュートを解除していただけますか？", en: "Could you unmute yourself, please?" },
-        { ja: "お電話ありがとうございます。", en: "Thank you for calling." },
+        { ja: "お電話ありがとうございます。ABC社の田中です。", en: "Thank you for calling. This is Tanaka from ABC Corporation." },
         { ja: "担当者にお繋ぎします。", en: "I'll put you through to the person in charge." },
         { ja: "あいにく担当者は席を外しております。", en: "I'm afraid he is away from his desk." },
         { ja: "伝言を残されますか？", en: "Would you like to leave a message?" },
@@ -716,7 +720,7 @@ const categoryData = {
         { ja: "非常に有意義な時間でした。", en: "It was a very productive session." },
         { ja: "パートナーシップを楽しみにしています。", en: "We look forward to a successful partnership." },
         { ja: "今後ともどうぞよろしくお願いいたします。", en: "We look forward to continuing our business relationship." }
-    ][i])
+    ]
 };
 
 let currentCategory = 'shopping';
@@ -738,7 +742,7 @@ if (SpeechRecognition) {
     recognition.onstart = () => {
         isRecording = true;
         const btn = document.getElementById('mic-btn');
-        btn.innerText = '🔴 録音中...';
+        btn.innerText = '🔴 録音中...（話してください）';
         btn.classList.add('recording');
         document.getElementById('speech-result').innerText = '聞き取り中...';
         document.getElementById('score-container').innerHTML = '';
@@ -752,9 +756,11 @@ if (SpeechRecognition) {
     recognition.onerror = (event) => {
         const isSecure = window.isSecureContext;
         if (!isSecure) {
-            document.getElementById('speech-result').innerHTML = '<span style="color:#dc3545;">⚠️ HTTPS環境でご利用ください。</span>';
+            document.getElementById('speech-result').innerHTML = '<span style="color:#dc3545;">⚠️ ローカルファイルではセキュリティ制限によりマイクが使えません。<br>https://環境でご利用ください。</span>';
+        } else if (event.error === 'not-allowed') {
+            document.getElementById('speech-result').innerText = 'マイクの使用が許可されていません。';
         } else {
-            document.getElementById('speech-result').innerText = '認識エラー';
+            document.getElementById('speech-result').innerText = '認識エラーが発生しました。';
         }
         resetMicButton();
     };
@@ -779,7 +785,7 @@ function toggleSpeechRecognition() {
         return;
     }
     if (!window.isSecureContext) {
-        alert('HTTPS環境上でお使いください。');
+        alert('ローカル環境ではマイク機能がブロックされます。https://サーバー上でお使いください。');
         return;
     }
     if (isRecording) {
@@ -812,13 +818,14 @@ function calculateSimilarity(str1, str2) {
         if (words2.includes(w)) matchCount++;
     });
     const score = Math.round((matchCount / Math.max(words1.length, words2.length)) * 100);
-    return { score };
+    return { score, recognizedText: clean1 };
 }
 
 function evaluatePronunciation(spokenText) {
     const targetText = data[currentIndex].en;
     const { score } = calculateSimilarity(spokenText, targetText);
-    document.getElementById('speech-result').innerHTML = `認識: "${spokenText}"`;
+    const resultElem = document.getElementById('speech-result');
+    resultElem.innerHTML = `認識結果: <strong>"${spokenText}"</strong>`;
     const scoreContainer = document.getElementById('score-container');
     let badgeClass = 'score-try';
     let label = 'Try Again! 💪';
@@ -883,18 +890,16 @@ function toggleAnswer() {
     isAnswerShown = !isAnswerShown;
 }
 
-function nextItem() {
+function nextCard() {
     window.speechSynthesis.cancel();
     currentIndex = (currentIndex + 1) % data.length;
-    if (currentMode === 'flashcard') updateFlashcard();
-    else updateQuiz();
+    updateFlashcard();
 }
 
-function prevItem() {
+function prevCard() {
     window.speechSynthesis.cancel();
     currentIndex = (currentIndex - 1 + data.length) % data.length;
-    if (currentMode === 'flashcard') updateFlashcard();
-    else updateQuiz();
+    updateFlashcard();
 }
 
 function speakCurrent() {
@@ -914,7 +919,7 @@ function copyCurrentText() {
     const textToCopy = data[currentIndex].en;
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(textToCopy).then(() => {
-            alert("コピーしました！");
+            alert("英語のフレーズをコピーしました！");
         }).catch(() => fallbackCopyText(textToCopy));
     } else {
         fallbackCopyText(textToCopy);
@@ -931,7 +936,7 @@ function fallbackCopyText(text) {
     textArea.select();
     try {
         document.execCommand('copy');
-        alert("コピーしました！");
+        alert("英語のフレーズをコピーしました！");
     } catch (err) {}
     document.body.removeChild(textArea);
 }
@@ -997,6 +1002,19 @@ function checkQuizAnswer(button, isCorrect) {
     }
 }
 
+function nextQuiz() {
+    window.speechSynthesis.cancel();
+    currentIndex = (currentIndex + 1) % data.length;
+    updateQuiz();
+}
+
+function prevQuiz() {
+    window.speechSynthesis.cancel();
+    currentIndex = (currentIndex - 1 + data.length) % data.length;
+    updateQuiz();
+}
+
+// 初期実行
 updateFlashcard();
 </script>
 
