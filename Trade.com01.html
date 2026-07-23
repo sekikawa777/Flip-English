@@ -1,0 +1,261 @@
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
+
+// --- 期間別モックデータ（API未接続時のフォールバック用） ---
+const MOCK_DATA = {
+  '1D': {
+    kioxia: [
+      { time: '09:00', price: 67000 },
+      { time: '10:00', price: 64670 },
+      { time: '11:30', price: 64840 },
+      { time: '13:00', price: 65030 },
+      { time: '14:00', price: 64880 },
+      { time: '15:00', price: 61880 },
+    ],
+    nikkei: [
+      { time: '09:00', price: 39500 },
+      { time: '10:00', price: 39620 },
+      { time: '11:30', price: 39580 },
+      { time: '13:00', price: 39710 },
+      { time: '14:00', price: 39650 },
+      { time: '15:00', price: 39600 },
+    ],
+    comment: '本日は寄り付き後に売りが出やすく下落傾向。海外メモリー株の動きや直近のニュースを背景にボラティリティが高まっています。'
+  },
+  '1W': {
+    kioxia: [
+      { time: '7/17', price: 52110 },
+      { time: '7/18', price: 54000 },
+      { time: '7/21', price: 63000 },
+      { time: '7/22', price: 64270 },
+      { time: '7/23', price: 61880 },
+    ],
+    nikkei: [
+      { time: '7/17', price: 38800 },
+      { time: '7/18', price: 39100 },
+      { time: '7/21', price: 39400 },
+      { time: '7/22', price: 39700 },
+      { time: '7/23', price: 39600 },
+    ],
+    comment: '急落からの急速な反発が交錯する荒い値動き。短期的な調整を踏まえつつもボトムを探る展開となっています。'
+  },
+  '1M': {
+    kioxia: [
+      { time: '6/23', price: 105000 },
+      { time: '6/30', price: 92000 },
+      { time: '7/07', price: 78000 },
+      { time: '7/14', price: 62000 },
+      { time: '7/23', price: 61880 },
+    ],
+    nikkei: [
+      { time: '6/23', price: 38200 },
+      { time: '6/30', price: 38500 },
+      { time: '7/07', price: 39000 },
+      { time: '7/14', price: 39200 },
+      { time: '7/23', price: 39600 },
+    ],
+    comment: '最高値からの利確売りや個別要因で一時大きく底打ち。半導体市況の回復期待が下支え要因となっています。'
+  },
+  '3M': {
+    kioxia: [
+      { time: '4/23', price: 45000 },
+      { time: '5/20', price: 68000 },
+      { time: '6/22', price: 112700 },
+      { time: '7/10', price: 80000 },
+      { time: '7/23', price: 61880 },
+    ],
+    nikkei: [
+      { time: '4/23', price: 37500 },
+      { time: '5/20', price: 38800 },
+      { time: '6/22', price: 39100 },
+      { time: '7/10', price: 39300 },
+      { time: '7/23', price: 39600 },
+    ],
+    comment: 'NAND需給の引き締めやAI需要期待から6月に年初来高値を更新。その後は調整局面に入っています。'
+  },
+  '6M': {
+    kioxia: [
+      { time: '1/23', price: 12000 },
+      { time: '3/01', price: 25000 },
+      { time: '4/15', price: 41000 },
+      { time: '6/01', price: 85000 },
+      { time: '7/23', price: 61880 },
+    ],
+    nikkei: [
+      { time: '1/23', price: 36000 },
+      { time: '3/01', price: 37500 },
+      { time: '4/15', price: 38000 },
+      { time: '6/01', price: 38900 },
+      { time: '7/23', price: 39600 },
+    ],
+    comment: '年初来安値圏からの急速な反発劇を見せた半年間。中長期的にはAIデータセンター向け需要が鍵を握ります。'
+  },
+  '1Y': {
+    kioxia: [
+      { time: '25/07', price: 8000 },
+      { time: '25/11', price: 5000 },
+      { time: '26/01', price: 10945 },
+      { time: '26/05', price: 60000 },
+      { time: '26/07', price: 61880 },
+    ],
+    nikkei: [
+      { time: '25/07', price: 37000 },
+      { time: '25/11', price: 38000 },
+      { time: '26/01', price: 36500 },
+      { time: '26/05', price: 38800 },
+      { time: '26/07', price: 39600 },
+    ],
+    comment: '業界全体での減産効果とAI向けNANDメモリ需要の急増により、大幅な業績改善プロセスが進行中。'
+  },
+  '3Y': {
+    kioxia: [
+      { time: '24/12', price: 1440 },
+      { time: '25/06', price: 9000 },
+      { time: '25/12', price: 8500 },
+      { time: '26/04', price: 42000 },
+      { time: '26/07', price: 61880 },
+    ],
+    nikkei: [
+      { time: '24/12', price: 33000 },
+      { time: '25/06', price: 36000 },
+      { time: '25/12', price: 37500 },
+      { time: '26/04', price: 38500 },
+      { time: '26/07', price: 39600 },
+    ],
+    comment: '上場以来、半導体サイクルの波をダイレクトに反映。次世代記憶技術のシェア拡大が今後の成長の軸となります。'
+  }
+};
+
+const PERIODS = [
+  { label: '1日', value: '1D' },
+  { label: '1週間', value: '1W' },
+  { label: '1ヶ月', value: '1M' },
+  { label: '3ヶ月', value: '3M' },
+  { label: '6ヶ月', value: '6M' },
+  { label: '1年', value: '1Y' },
+  { label: '3年', value: '3Y' },
+];
+
+export default function StockDashboard() {
+  const [selectedPeriod, setSelectedPeriod] = useState('1D');
+  const [data, setData] = useState(MOCK_DATA['1D']);
+  const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
+
+  // 期間切り替え時の処理
+  useEffect(() => {
+    setData(MOCK_DATA[selectedPeriod]);
+  }, [selectedPeriod]);
+
+  // 手動更新ハンドラ（API連携時はここでデータ再取得）
+  const handleRefresh = () => {
+    setLastUpdated(new Date().toLocaleTimeString());
+  };
+
+  // 価格変動率の計算
+  const calcChange = (list) => {
+    if (!list || list.length < 2) return { amount: 0, percent: 0 };
+    const start = list[0].price;
+    const end = list[list.length - 1].price;
+    const amount = end - start;
+    const percent = ((amount / start) * 100).toFixed(2);
+    return { amount, percent };
+  };
+
+  const kioxiaChange = calcChange(data.kioxia);
+  const nikkeiChange = calcChange(data.nikkei);
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 font-sans bg-gray-50 min-h-screen">
+      {/* ヘッダー */}
+      <header className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-xl font-bold text-gray-800">キオクシア (285A) & 日経平均 モニター</h1>
+          <p className="text-xs text-gray-500">最終更新: {lastUpdated}</p>
+        </div>
+        <button
+          onClick={handleRefresh}
+          className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 transition flex items-center gap-1 text-sm"
+        >
+          <RefreshCw className="w-4 h-4" /> 更新
+        </button>
+      </header>
+
+      {/* 期間選択タブ */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        {PERIODS.map((period) => (
+          <button
+            key={period.value}
+            onClick={() => setSelectedPeriod(period.value)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              selectedPeriod === period.value
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            {period.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 株価サマリーカード */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* キオクシア */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">個別銘柄</span>
+          <h2 className="text-lg font-bold text-gray-700">キオクシアホールディングス</h2>
+          <div className="flex items-baseline gap-3 mt-2">
+            <span className="text-2xl font-black text-gray-900">
+              ¥{data.kioxia[data.kioxia.length - 1].price.toLocaleString()}
+            </span>
+            <span className={`flex items-center text-sm font-bold ${kioxiaChange.amount >= 0 ? 'text-red-500' : 'text-green-600'}`}>
+              {kioxiaChange.amount >= 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
+              {kioxiaChange.amount >= 0 ? `+${kioxiaChange.amount}` : kioxiaChange.amount} ({kioxiaChange.percent}%)
+            </span>
+          </div>
+        </div>
+
+        {/* 日経平均 */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+          <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">市場インデックス</span>
+          <h2 className="text-lg font-bold text-gray-700">日経平均株価</h2>
+          <div className="flex items-baseline gap-3 mt-2">
+            <span className="text-2xl font-black text-gray-900">
+              ¥{data.nikkei[data.nikkei.length - 1].price.toLocaleString()}
+            </span>
+            <span className={`flex items-center text-sm font-bold ${nikkeiChange.amount >= 0 ? 'text-red-500' : 'text-green-600'}`}>
+              {nikkeiChange.amount >= 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
+              {nikkeiChange.amount >= 0 ? `+${nikkeiChange.amount}` : nikkeiChange.amount} ({nikkeiChange.percent}%)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 株価チャートエリア */}
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-6">
+        <h3 className="text-md font-bold text-gray-800 mb-4">推移チャート</h3>
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data.kioxia}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="time" stroke="#9ca3af" fontSize={12} />
+              <YAxis domain={['auto', 'auto']} stroke="#9ca3af" fontSize={12} hide />
+              <Tooltip formatter={(value) => [`¥${value.toLocaleString()}`, '株価']} />
+              <Line type="monotone" dataKey="price" stroke="#2563eb" strokeWidth={2.5} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* リアルタイム解説＆見通しコメント */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
+        <h3 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
+          <span>💡</span> {selectedPeriod} 期間の動きと今後の見通し
+        </h3>
+        <p className="text-sm text-blue-950 leading-relaxed">
+          {data.comment}
+        </p>
+      </div>
+    </div>
+  );
+}
