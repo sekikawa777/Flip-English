@@ -2,266 +2,351 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>英会話復習＆発音採点アプリ</title>
     <style>
         * {
             box-sizing: border-box;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
+        
+        /* 1画面にぴったり収めるための全体設定 */
+        html, body {
+            height: 100%;
+            overflow: hidden; /* 全体のスクロールを無効化 */
+        }
+
         body {
             background-color: #f0f4f8;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            /* アドレスバー伸縮対応の100dvh */
+            height: 100dvh; 
             margin: 0;
-            padding: 20px;
+            padding: clamp(8px, 2vh, 16px);
         }
+
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 480px;
+            /* コンテナ高さを画面の100%から余白分引いたサイズに制限 */
+            max-height: 100%;
             background: white;
             border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            padding: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            padding: clamp(12px, 2.5vh, 20px);
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
+
+        /* ヘッダー・選択エリアの余白を可変圧縮 */
         h1 {
-            font-size: 1.2rem;
+            font-size: clamp(1.0rem, 3.8vw, 1.2rem);
             color: #333;
-            margin-bottom: 15px;
+            margin: 0 0 clamp(6px, 1.2vh, 10px) 0;
         }
+
         .category-select-container {
-            margin-bottom: 15px;
+            margin-bottom: clamp(6px, 1.2vh, 10px);
             text-align: left;
         }
+
         .category-label {
-            font-size: 0.85rem;
+            font-size: clamp(0.75rem, 2.8vw, 0.85rem);
             font-weight: bold;
             color: #495057;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             display: block;
         }
+
         .category-select {
             width: 100%;
-            padding: 10px;
+            padding: clamp(6px, 1vh, 10px);
             border-radius: 8px;
             border: 2px solid #007bff;
             background-color: #f8f9fa;
-            font-size: 1rem;
+            font-size: clamp(0.85rem, 3.2vw, 0.95rem);
             font-weight: bold;
             color: #007bff;
             outline: none;
             cursor: pointer;
         }
+
         .mode-buttons {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: clamp(6px, 1.2vh, 10px);
         }
+
         .mode-btn {
             flex: 1;
-            padding: 10px;
+            padding: clamp(6px, 1vh, 9px);
             border: 2px solid #007bff;
             background: white;
             color: #007bff;
             border-radius: 8px;
             font-weight: bold;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
             cursor: pointer;
         }
+
         .mode-btn.active {
             background: #007bff;
             color: white;
         }
+
+        /* コントロール行（再生速度＆シャッフル）を同列コンパクト配置に最適化 */
+        .sub-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: clamp(6px, 1.2vh, 10px);
+        }
+
         .rate-control {
+            flex: 2;
             background: #e9ecef;
             border-radius: 8px;
-            padding: 10px 15px;
-            margin-bottom: 15px;
+            padding: clamp(4px, 0.8vh, 8px) 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.85rem;
+            font-size: clamp(0.75rem, 2.6vw, 0.8rem);
             color: #495057;
             font-weight: bold;
         }
+
         .rate-control input[type=range] {
             flex: 1;
-            margin: 0 10px;
+            margin: 0 6px;
             cursor: pointer;
         }
+
+        .shuffle-btn {
+            flex: 1;
+            background: #ffc107;
+            color: #212529;
+            border: none;
+            padding: clamp(6px, 1vh, 8px) 8px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: clamp(0.75rem, 2.6vw, 0.85rem);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        #progress {
+            margin-bottom: clamp(4px, 0.8vh, 8px);
+            font-size: clamp(0.75rem, 2.8vw, 0.85rem);
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* 暗記カードモード：高さを固定値からvh（可変）に変更 */
+        #flashcard-mode, #quiz-mode {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: space-between;
+        }
+
         .card {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
             border-radius: 12px;
-            padding: 25px 20px;
-            min-height: 180px;
+            padding: clamp(12px, 2vh, 20px) 15px;
+            /* 180px固定をやめ、画面の高さに合わせて柔軟に伸縮 */
+            min-height: 15vh;
+            max-height: 25vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            margin-bottom: 15px;
+            margin-bottom: clamp(8px, 1.5vh, 12px);
             transition: transform 0.2s;
         }
+
         .card:hover {
             transform: translateY(-2px);
         }
+
         .japanese {
-            font-size: 1.1rem;
+            font-size: clamp(0.95rem, 3.8vw, 1.15rem);
             font-weight: bold;
             color: #212529;
-            margin-bottom: 15px;
+            margin-bottom: clamp(6px, 1vh, 10px);
         }
+
         .english {
-            font-size: 1.1rem;
+            font-size: clamp(0.95rem, 3.8vw, 1.15rem);
             color: #28a745;
             font-weight: bold;
             display: none;
         }
+
         .hint {
-            font-size: 0.8rem;
+            font-size: clamp(0.7rem, 2.5vw, 0.8rem);
             color: #888;
-            margin-top: 10px;
+            margin-top: 4px;
         }
+
+        /* 音声セクションの省スペース化 */
         .speech-section {
             background: #f1f3f5;
             border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
+            padding: clamp(8px, 1.5vh, 12px);
+            margin-bottom: clamp(8px, 1.5vh, 12px);
         }
+
         .mic-btn {
             background: #dc3545;
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 25px;
+            padding: clamp(8px, 1.2vh, 10px) 16px;
+            border-radius: 20px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: clamp(0.85rem, 3.2vw, 0.95rem);
             transition: background 0.2s;
+            width: 100%;
         }
+
         .mic-btn.recording {
             background: #ffc107;
             color: #212529;
             animation: pulse 1.2s infinite;
         }
+
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.6; }
             100% { opacity: 1; }
         }
+
         .speech-result {
-            margin-top: 10px;
-            font-size: 0.85rem;
+            margin-top: 6px;
+            font-size: clamp(0.75rem, 2.8vw, 0.85rem);
             color: #495057;
-            line-height: 1.4;
+            line-height: 1.3;
         }
+
         .score-badge {
             display: inline-block;
-            margin-top: 5px;
-            padding: 4px 12px;
-            border-radius: 12px;
+            margin-top: 4px;
+            padding: 2px 10px;
+            border-radius: 10px;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: clamp(0.85rem, 3.2vw, 1.0rem);
         }
+
         .score-100 { background: #d4edda; color: #155724; }
         .score-good { background: #cce5ff; color: #004085; }
         .score-try { background: #fff3cd; color: #856404; }
 
+        /* クイズモードの高さ制御 */
+        .quiz-options-container {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(6px, 1vh, 10px);
+            margin-bottom: clamp(8px, 1.5vh, 12px);
+        }
+
         .quiz-option {
             display: block;
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
+            padding: clamp(8px, 1.2vh, 12px);
+            margin: 0;
             background: #f8f9fa;
             border: 1px solid #ced4da;
             border-radius: 8px;
             text-align: left;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: clamp(0.85rem, 3.2vw, 0.95rem);
             transition: background 0.15s;
         }
+
         .quiz-option:hover { background: #e2e6ea; }
         .quiz-option.correct { background: #d4edda !important; border-color: #28a745 !important; color: #155724 !important; font-weight: bold; }
         .quiz-option.wrong { background: #f8d7da !important; border-color: #dc3545 !important; color: #721c24 !important; }
 
+        /* ナビゲーション操作ボタン */
         .controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
+
         .nav-btn {
             background: #6c757d;
             color: white;
             border: none;
-            padding: 8px 14px;
+            padding: clamp(8px, 1.2vh, 10px) 12px;
             border-radius: 6px;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
             cursor: pointer;
+            flex: 1;
         }
-        .shuffle-btn {
-            background: #ffc107;
-            color: #212529;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 15px;
-            width: 100%;
-        }
+
         .audio-btn, .copy-btn {
             color: white;
             border: none;
-            padding: 10px 14px;
+            padding: clamp(8px, 1.2vh, 10px) 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: clamp(1.0rem, 3.8vw, 1.2rem);
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
         .audio-btn { background: #17a2b8; }
         .copy-btn { background: #28a745; }
-        
+
         .kb-shortcut-hint {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #aaa;
-            margin-top: 15px;
+            margin-top: clamp(4px, 0.8vh, 8px);
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>英会話フレーズ学習</h1>
-    
-    <div class="category-select-container">
-        <label class="category-label" for="category-select">📁 カテゴリーを選択:</label>
-        <select id="category-select" class="category-select" onchange="changeCategory(this.value)">
-            <option value="shopping">🛒 ショッピング (100選)</option>
-            <option value="travel">✈️ 旅行・交通 (100選)</option>
-            <option value="daily">💬 日常会話 (100選)</option>
-            <option value="business">💼 ビジネス (100選)</option>
-        </select>
+    <div>
+        <h1>英会話フレーズ学習</h1>
+        
+        <div class="category-select-container">
+            <label class="category-label" for="category-select">📁 カテゴリーを選択:</label>
+            <select id="category-select" class="category-select" onchange="changeCategory(this.value)">
+                <option value="shopping">🛒 ショッピング (100選)</option>
+                <option value="travel">✈️ 旅行・交通 (100選)</option>
+                <option value="daily">💬 日常会話 (100選)</option>
+                <option value="business">💼 ビジネス (100選)</option>
+            </select>
+        </div>
+
+        <div class="mode-buttons">
+            <button class="mode-btn active" onclick="switchMode('flashcard')">暗記カード</button>
+            <button class="mode-btn" onclick="switchMode('quiz')">4択クイズ</button>
+        </div>
+
+        <!-- 再生速度とシャッフルを1行にまとめて縦幅を圧縮 -->
+        <div class="sub-controls">
+            <div class="rate-control">
+                <span>速度:</span>
+                <input type="range" id="speech-rate" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateRateLabel(this.value)">
+                <span id="rate-value">1.0x</span>
+            </div>
+            <button class="shuffle-btn" onclick="shuffleCurrentData()">🔀 シャッフル</button>
+        </div>
+
+        <div id="progress">1 / 100</div>
     </div>
-
-    <div class="mode-buttons">
-        <button class="mode-btn active" onclick="switchMode('flashcard')">暗記カード</button>
-        <button class="mode-btn" onclick="switchMode('quiz')">4択クイズ</button>
-    </div>
-
-    <div class="rate-control">
-        <span>再生速度:</span>
-        <input type="range" id="speech-rate" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateRateLabel(this.value)">
-        <span id="rate-value">1.0x</span>
-    </div>
-
-    <button class="shuffle-btn" onclick="shuffleCurrentData()">🔀 順番をシャッフルする</button>
-
-    <div id="progress" style="margin-bottom: 10px; font-size: 0.9rem; color: #666;">1 / 100</div>
 
     <!-- 暗記カードモード -->
     <div id="flashcard-mode">
@@ -287,15 +372,17 @@
 
     <!-- クイズモード -->
     <div id="quiz-mode" style="display: none;">
-        <div class="japanese" id="quiz-japanese" style="margin-bottom: 20px;"></div>
-        <div id="quiz-options"></div>
-        <div class="controls" style="margin-top: 20px;">
+        <div class="card" style="cursor: default; min-height: auto;">
+            <div class="japanese" id="quiz-japanese" style="margin-bottom: 0;"></div>
+        </div>
+        <div id="quiz-options" class="quiz-options-container"></div>
+        <div class="controls">
             <button class="nav-btn" onclick="prevQuiz()">前へ</button>
             <button class="nav-btn" onclick="nextQuiz()">次へ</button>
         </div>
     </div>
 
-    <div class="kb-shortcut-hint">💡 ショートカット: [←/→] 移動 | [Space] 答え表示 | [Enter] マイク</div>
+    <div class="kb-shortcut-hint">💡 ショートカット: [←/→] 移動 | [Space] 答え | [Enter] マイク</div>
 </div>
 
 <script>
@@ -470,7 +557,7 @@ function changeCategory(catKey) {
     }
 }
 
-// レーベンシュタイン距離を用いた一致度評価（文字・単語複合）
+// レーベンシュタイン距離を用いた一致度評価
 function levenshteinDistance(a, b) {
     const matrix = [];
     for (let i = 0; i <= b.length; i++) matrix[i] = [i];
@@ -640,13 +727,13 @@ function switchMode(mode) {
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
     if (mode === 'flashcard') {
         document.querySelectorAll('.mode-btn')[0].classList.add('active');
-        document.getElementById('flashcard-mode').style.display = 'block';
+        document.getElementById('flashcard-mode').style.display = 'flex';
         document.getElementById('quiz-mode').style.display = 'none';
         updateFlashcard();
     } else {
         document.querySelectorAll('.mode-btn')[1].classList.add('active');
         document.getElementById('flashcard-mode').style.display = 'none';
-        document.getElementById('quiz-mode').style.display = 'block';
+        document.getElementById('quiz-mode').style.display = 'flex';
         updateQuiz();
     }
 }
@@ -728,42 +815,7 @@ updateFlashcard();
 
 </body>
 </html>
-e police station?" },
-        { ja: "大使館に連絡したいです。", en: "I need to contact the embassy." },
-        { ja: "財布を盗まれました。", en: "My wallet was stolen." },
-        { ja: "助けてください！", en: "Help me, please!" },
-        { ja: "緊急連絡先を教えてください。", en: "Please give me the emergency contact number." },
-        { ja: "怪我をしました。", en: "I am injured." },
-        { ja: "救急車を呼んでください！", en: "Please call an ambulance!" },
-        { ja: "保険でカバーされますか？", en: "Will this be covered by insurance?" },
-        { ja: "診断書をもらえますか？", en: "Could I get a medical certificate?" },
-        { ja: "このバスは何分おきに出ますか？", en: "How often does this bus run?" },
-        { ja: "終電は何時ですか？", en: "What time is the last train?" },
-        { ja: "始発は何時ですか？", en: "What time is the first train?" },
-        { ja: "座席の予約は必要ですか？", en: "Do I need a seat reservation?" },
-        { ja: "この席は空いていますか？", en: "Is this seat taken?" },
-        { ja: "席を倒してもいいですか？", en: "May I recline my seat?" },
-        { ja: "シートベルトをお締めください。", en: "Please fasten your seatbelt." },
-        { ja: "機内モードに設定してください。", en: "Please set your device to airplane mode." },
-        { ja: "到着予定時刻はいつですか？", en: "What is the estimated time of arrival?" },
-        { ja: "現地時間は何時ですか？", en: "What is the local time?" },
-        { ja: "時差ボケです。", en: "I have jet lag." },
-        { ja: "旅を満喫しています！", en: "I am fully enjoying my trip!" },
-        { ja: "またここを訪れたいです。", en: "I would love to visit here again." },
-        { ja: "親切にしてくれてありがとう！", en: "Thank you for being so kind!" },
-        { ja: "無事に到着しました。", en: "I arrived safely." }
-    ],
-    daily: [
-        { ja: "今日はとてもいい天気ですね！", en: "It's a beautiful day today!" },
-        { ja: "週末は何をして過ごす予定ですか？", en: "Do you have any plans for the weekend?" },
-        { ja: "久しぶりですね！元気でしたか？", en: "Long time no see! How have you been?" },
-        { ja: "調子はどうですか？", en: "How's it going?" },
-        { ja: "相変わらずだよ。", en: "Same as usual." },
-        { ja: "最近どう？", en: "What's up?" },
-        { ja: "特に変わりないよ。", en: "Not much." },
-        { ja: "お会いできて嬉しいです。", en: "Nice to meet you." },
-        { ja: "お気をつけて！", en: "Take care!" },
-        { ja: "また後でね！", en: "See you later!" },
+ater!" },
         { ja: "良い一日を！", en: "Have a great day!" },
         { ja: "ごめんなさい、遅れました！", en: "Sorry I'm late!" },
         { ja: "気にしないで。", en: "Never mind." },
