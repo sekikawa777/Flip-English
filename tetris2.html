@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>3D Cube Tetris with Controls</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #1a1a1a;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 15px 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+      letter-spacing: 2px;
+    }
+    p {
+      margin: 5px 0;
+      font-size: 16px;
+    }
+    #controls-info {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      display: none; /* スマホ等では隠して画面をスッキリさせる */
+    }
+    @media (min-width: 768px) {
+      #controls-info { display: block; }
+    }
+
+    /* --- オンスクリーンコントローラーのスタイル --- */
+    #touch-controls {
+      position: absolute;
+      bottom: 25px;
+      left: 0;
+      width: 100%;
+      height: 160px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 25px;
+      box-sizing: border-box;
+      z-index: 20;
+      pointer-events: none; /* コントローラー領域以外はクリックを貫通 */
+    }
+
+    .d-pad, .action-buttons {
+      pointer-events: auto;
+      position: relative;
+    }
+
+    /* 十字キー */
+    .d-pad {
+      width: 140px;
+      height: 140px;
+    }
+    .btn-dir {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 8px;
+      color: white;
+      font-size: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    .btn-dir:active {
+      background: rgba(255, 255, 255, 0.5);
+    }
+    #btn-up    { top: 0; left: 48px; }
+    #btn-down  { bottom: 0; left: 48px; }
+    #btn-left  { top: 48px; left: 0; }
+    #btn-right { top: 48px; right: 0; }
+
+    /* アクションボタン (回転 & ハードドロップ) */
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    .btn-action {
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: manipulation;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .btn-action:active {
+      transform: scale(0.95);
+    }
+    #btn-rotate {
+      background: rgba(46, 213, 115, 0.6); /* 緑 */
+    }
+    #btn-drop {
+      background: rgba(255, 71, 87, 0.6); /* 赤 */
+      width: 75px;
+      height: 75px;
+    }
+
+    /* ゲームオーバー表示 */
+    #game-over {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.85);
+      padding: 30px 50px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+      z-index: 30;
+    }
+    #game-over h2 {
+      color: #ff4757;
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+    #restart-btn {
+      margin-top: 15px;
+      padding: 12px 25px;
+      font-size: 18px;
+      background: #2ed573;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    #restart-btn:hover {
+      background: #26af5f;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="ui">
+    <h1>3D TETRIS</h1>
+    <p>SCORE: <span id="score">0</span></p>
+    <p>LINES: <span id="lines">0</span></p>
+  </div>
+
+  <div id="controls-info">
+    <strong>キーボード操作:</strong><br>
+    ← / → : 左右移動<br>
+    ↑ : ブロック回転<br>
+    ↓ : ソフトドロップ<br>
+    Space : ハードドロップ
+  </div>
+
+  <!-- タッチ・画面操作用コントローラー -->
+  <div id="touch-controls">
+    <!-- 十字キー -->
+    <div class="d-pad">
+      <div class="btn-dir" id="btn-up">▲</div>
+      <div class="btn-dir" id="btn-left">◀</div>
+      <div class="btn-dir" id="btn-right">▶</div>
+      <div class="btn-dir" id="btn-down">▼</div>
+    </div>
+
+    <!-- アクションボタン -->
+    <div class="action-buttons">
+      <div class="btn-action" id="btn-rotate">回転</div>
+      <div class="btn-action" id="btn-drop">DROP</div>
+    </div>
+  </div>
+
+  <div id="game-over">
+    <h2>GAME OVER</h2>
+    <p>FINAL SCORE: <span id="final-score">0</span></p>
+    <button id="restart-btn" onclick="resetGame()">REPLAY</button>
+  </div>
+
+  <!-- Three.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    // --- フィールド設定 ---
+    const COLS = 10;
+    const ROWS = 20;
+    const BLOCK_SIZE = 1;
+
+    // --- テトリミノ（ブロックの形と色）定義 ---
+    const SHAPES = [
+      { shape: [[1,1,1,1]], color: 0x00d2d3 }, // I (シアン)
+      { shape: [[1,1],[1,1]], color: 0xffdd59 }, // O (イエロー)
+      { shape: [[0,1,0],[1,1,1]], color: 0x5f27cd }, // T (パープル)
+      { shape: [[0,1,1],[1,1,0]], color: 0x10ac84 }, // S (グリーン)
+      { shape: [[1,1,0],[0,1,1]], color: 0xee5253 }, // Z (レッド)
+      { shape: [[1,0,0],[1,1,1]], color: 0x2e86de }, // J (ブルー)
+      { shape: [[0,0,1],[1,1,1]], color: 0xff9f43 }  // L (オレンジ)
+    ];
+
+    // --- 変数管理 ---
+    let scene, camera, renderer;
+    let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    let currentPiece = null;
+    let score = 0;
+    let linesCleared = 0;
+    let dropCounter = 0;
+    let dropInterval = 1000;
+    let lastTime = 0;
+    let isGameOver = false;
+
+    // --- 初期化処理 ---
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a1a1a);
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(COLS / 2 - 0.5, ROWS / 2, 22);
+      camera.lookAt(COLS / 2 - 0.5, ROWS / 2 - 2, 0);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(10, 20, 20);
+      scene.add(dirLight);
+
+      createStageGrid();
+      spawnPiece();
+
+      window.addEventListener('resize', onWindowResize);
+      document.addEventListener('keydown', handleKeyPress);
+      
+      // オンスクリーンボタンのイベントリスナー設定
+      setupTouchEvents();
+
+      requestAnimationFrame(update);
+    }
+
+    // ステージの外枠を作成
+    function createStageGrid() {
+      const geometry = new THREE.BoxGeometry(COLS, ROWS, 1);
+      const wireframe = new THREE.WireframeGeometry(geometry);
+      const line = new THREE.LineSegments(wireframe);
+      line.material.color.setHex(0x444444);
+      line.position.set(COLS / 2 - 0.5, ROWS / 2 - 0.5, -0.5);
+      scene.add(line);
+    }
+
+    // キューブ生成
+    function createCube(x, y, color) {
+      const geometry = new THREE.BoxGeometry(BLOCK_SIZE * 0.95, BLOCK_SIZE * 0.95, BLOCK_SIZE * 0.95);
+      const material = new THREE.MeshPhongMaterial({
+        color: color,
+        shininess: 80,
+        flatShading: true
+      });
+      const cube = new THREE.Mesh(geometry, material);
+      cube.position.set(x, y, 0);
+      scene.add(cube);
+      return cube;
+    }
+
+    // ブロック出現
+    function spawnPiece() {
+      const type = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+      currentPiece = {
+        shape: type.shape,
+        color: type.color,
+        x: Math.floor(COLS / 2) - Math.ceil(type.shape[0].length / 2),
+        y: ROWS - type.shape.length,
+        cubes: []
+      };
+
+      if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+        isGameOver = true;
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('game-over').style.display = 'block';
+        return;
+      }
+
+      drawPiece();
+    }
+
+    // ピース描画
+    function drawPiece() {
+      if (currentPiece.cubes) {
+        currentPiece.cubes.forEach(cube => scene.remove(cube));
+      }
+      currentPiece.cubes = [];
+
+      currentPiece.shape.forEach((row, rIdx) => {
+        row.forEach((value, cIdx) => {
+          if (value) {
+            const cube = createCube(
+              currentPiece.x + cIdx,
+              currentPiece.y - rIdx,
+              currentPiece.color
+            );
+            currentPiece.cubes.push(cube);
+          }
+        });
+      });
+    }
+
+    // 衝突判定
+    function checkCollision(offsetX, offsetY, shape) {
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (shape[r][c]) {
+            const newX = offsetX + c;
+            const newY = offsetY - r;
+
+            if (newX < 0 || newX >= COLS || newY < 0) return true;
+            if (newY < ROWS && grid[newY][newX]) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // ブロックの固定
+    function lockPiece() {
+      currentPiece.shape.forEach((row, rIdx) => {
+        row.forEach((value, cIdx) => {
+          if (value) {
+            const gridX = currentPiece.x + cIdx;
+            const gridY = currentPiece.y - rIdx;
+            if (gridY >= 0 && gridY < ROWS) {
+              const cubeIndex = currentPiece.cubes.findIndex(
+                c => Math.round(c.position.x) === gridX && Math.round(c.position.y) === gridY
+              );
+              if (cubeIndex !== -1) {
+                grid[gridY][gridX] = currentPiece.cubes[cubeIndex];
+              }
+            }
+          }
+        });
+      });
+
+      clearLines();
+      spawnPiece();
+    }
+
+    // ライン消去
+    function clearLines() {
+      let linesCount = 0;
+
+      for (let r = 0; r < ROWS; r++) {
+        if (grid[r].every(cell => cell !== null)) {
+          linesCount++;
+          grid[r].forEach(cube => scene.remove(cube));
+          
+          for (let y = r; y < ROWS - 1; y++) {
+            grid[y] = grid[y + 1];
+            grid[y].forEach(cube => {
+              if (cube) cube.position.y -= 1;
+            });
+          }
+          grid[ROWS - 1] = Array(COLS).fill(null);
+          r--;
+        }
+      }
+
+      if (linesCount > 0) {
+        linesCleared += linesCount;
+        score += linesCount * 100 * linesCount;
+        document.getElementById('score').innerText = score;
+        document.getElementById('lines').innerText = linesCleared;
+      }
+    }
+
+    // アクション関数（キーボード・ボタン共通）
+    function moveLeft() {
+      if (!isGameOver && !checkCollision(currentPiece.x - 1, currentPiece.y, currentPiece.shape)) {
+        currentPiece.x--;
+        drawPiece();
+      }
+    }
+
+    function moveRight() {
+      if (!isGameOver && !checkCollision(currentPiece.x + 1, currentPiece.y, currentPiece.shape)) {
+        currentPiece.x++;
+        drawPiece();
+      }
+    }
+
+    function moveDown() {
+      if (isGameOver) return;
+      if (!checkCollision(currentPiece.x, currentPiece.y - 1, currentPiece.shape)) {
+        currentPiece.y--;
+        drawPiece();
+      } else {
+        lockPiece();
+      }
+    }
+
+    function rotate() {
+      if (isGameOver) return;
+      const rotated = currentPiece.shape[0].map((_, index) => 
+        currentPiece.shape.map(row => row[index]).reverse()
+      );
+      if (!checkCollision(currentPiece.x, currentPiece.y, rotated)) {
+        currentPiece.shape = rotated;
+        drawPiece();
+      }
+    }
+
+    function hardDrop() {
+      if (isGameOver) return;
+      while (!checkCollision(currentPiece.x, currentPiece.y - 1, currentPiece.shape)) {
+        currentPiece.y--;
+      }
+      drawPiece();
+      lockPiece();
+    }
+
+    // キーボード操作
+    function handleKeyPress(e) {
+      if (e.key === 'ArrowLeft') moveLeft();
+      else if (e.key === 'ArrowRight') moveRight();
+      else if (e.key === 'ArrowDown') moveDown();
+      else if (e.key === 'ArrowUp') rotate();
+      else if (e.key === ' ') hardDrop();
+    }
+
+    // ボタンの操作リスナー（画面タップ/クリックに対応）
+    function setupTouchEvents() {
+      const bindBtn = (id, action) => {
+        const btn = document.getElementById(id);
+        const handleEvent = (e) => {
+          e.preventDefault();
+          action();
+        };
+        btn.addEventListener('pointerdown', handleEvent);
+      };
+
+      bindBtn('btn-left', moveLeft);
+      bindBtn('btn-right', moveRight);
+      bindBtn('btn-down', moveDown);
+      bindBtn('btn-up', rotate);
+      bindBtn('btn-rotate', rotate);
+      bindBtn('btn-drop', hardDrop);
+    }
+
+    // リセット機能
+    function resetGame() {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c]) {
+            scene.remove(grid[r][c]);
+            grid[r][c] = null;
+          }
+        }
+      }
+      if (currentPiece && currentPiece.cubes) {
+        currentPiece.cubes.forEach(c => scene.remove(c));
+      }
+
+      score = 0;
+      linesCleared = 0;
+      isGameOver = false;
+      document.getElementById('score').innerText = 0;
+      document.getElementById('lines').innerText = 0;
+      document.getElementById('game-over').style.display = 'none';
+
+      spawnPiece();
+    }
+
+    // ゲームループ
+    function update(time = 0) {
+      const deltaTime = time - lastTime;
+      lastTime = time;
+
+      dropCounter += deltaTime;
+      if (dropCounter > dropInterval && !isGameOver) {
+        moveDown();
+        dropCounter = 0;
+      }
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(update);
+    }
+
+    // ウィンドウサイズ変更対応
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    init();
+  </script>
+</body>
+</html>
