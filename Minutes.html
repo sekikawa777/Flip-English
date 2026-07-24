@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会議リアルタイム翻訳＆要約</title>
+  <!-- Google Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f7f7f8;
+      --card-bg: #ffffff;
+      --text-main: #1f1f1f;
+      --text-sub: #757575;
+      --accent-color: #2b2b2b;
+      --pill-bg: #f0f0f0;
+      --border-color: #e5e5e5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* モバイルアプリサイズのコンテナ */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+      position: relative;
+    }
+
+    /* ヘッダー領域 */
+    .header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title-area {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .header-meta {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      color: var(--text-sub);
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-sub);
+      font-size: 1.4rem;
+    }
+
+    /* メインナビゲーション (文書 / 原文) */
+    .top-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 20px;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .nav-item.active {
+      color: var(--text-main);
+    }
+
+    .nav-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 16px;
+      right: 16px;
+      height: 2px;
+      background-color: var(--accent-color);
+    }
+
+    /* サブフィルタ (要約 / スクリプト / 言語) */
+    .sub-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+    }
+
+    .pill-group {
+      display: flex;
+      background-color: var(--pill-bg);
+      padding: 3px;
+      border-radius: 20px;
+    }
+
+    .pill-btn {
+      border: none;
+      background: none;
+      padding: 6px 16px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .pill-btn.active {
+      background: #ffffff;
+      color: var(--text-main);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .lang-selector {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    /* コンテンツ表示エリア */
+    .content-area {
+      flex: 1;
+      padding: 10px 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .timestamp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background-color: var(--pill-bg);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      width: fit-content;
+    }
+
+    .speech-block {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .text-original {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--text-main);
+    }
+
+    .text-translated {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #4a4a4a;
+    }
+
+    /* 録音コントロール・ボトム領域 */
+    .bottom-bar {
+      padding: 12px 20px 24px 20px;
+      background-color: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ask-input-box {
+      display: flex;
+      align-items: center;
+      background-color: var(--pill-bg);
+      padding: 10px 16px;
+      border-radius: 24px;
+      gap: 10px;
+    }
+
+    .ask-input-box input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .rec-btn {
+      background-color: #e53935;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rec-btn.recording {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-left">
+      <button class="icon-btn"><span class="material-icons">chevron_left</span></button>
+      <div class="header-title-area">
+        <span class="header-title">移行計画と権限管理検討</span>
+        <span class="header-meta">2026.07.24 • 28m</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn"><span class="material-icons">ios_share</span></button>
+      <button class="icon-btn"><span class="material-icons">more_horiz</span></button>
+    </div>
+  </header>
+
+  <!-- 上部ナビゲーション -->
+  <nav class="top-nav">
+    <div class="nav-item">文書</div>
+    <div class="nav-item active">原文</div>
+  </nav>
+
+  <!-- サブ切り替え -->
+  <div class="sub-nav">
+    <div class="pill-group">
+      <button class="pill-btn" onclick="toggleView('summary')">要約</button>
+      <button class="pill-btn active" onclick="toggleView('script')">スクリプト</button>
+    </div>
+    <button class="lang-selector">
+      <span class="material-icons" style="font-size: 1.1rem;">g_translate</span>
+      すべて <span class="material-icons" style="font-size: 0.9rem;">expand_more</span>
+    </button>
+  </div>
+
+  <!-- コンテンツ領域 -->
+  <main class="content-area" id="contentArea">
+    <div class="timestamp-badge">
+      <span class="material-icons" style="font-size: 0.8rem;">schedule</span>
+      <span id="currentTime">16:01:41</span>
+    </div>
+
+    <!-- 要約表示ビュー（初期は隠す） -->
+    <div id="summaryView" style="display: none;">
+      <h3>📌 1ページ要約</h3>
+      <p style="margin-top: 8px; line-height: 1.6; color: #555;">
+        ・プレプロダクションテストおよびライフサイクルテストの実施状況について確認。<br>
+        ・新規開発機能ではなく既存テストを中心にした運用の擦り合わせを完了。
+      </p>
+    </div>
+
+    <!-- スクリプト表示ビュー -->
+    <div id="scriptView" class="speech-block">
+      <p class="text-original" id="originalText">
+        I got attended to speak on it. So much. Good. Yes. Hi, everyone. Okay. Good. Me, first of all, lab. I had a long call with persona. Name. I think Monday. To explain him. Circumstances of the voice. Lap. And I think. If discussed a couple of times, I think we are more or less aligned here. So I was explained to him that this is more pre-production testing and life cycle testing that we are doing and not new boxes or new functions or something for product development.
+      </p>
+      <p class="text-translated" id="translatedText">
+        お話しする機会をいただきました。とても良いです。皆さん、こんにちは。まず最初に、ラボについてです。私は、月曜日にペルソナと長い電話をしました。彼に声の状況を説明しました。そして、何度か話し合ったと思いますが、私たちはほぼ意見が一致していると思います。そのため、これはプロダクト開発のための新機能などではなく、主にプレプロダクションテストやライフサイクルテストを行っているのだと説明しました。
+      </p>
+    </div>
+  </main>
+
+  <!-- 下部操作エリア -->
+  <footer class="bottom-bar">
+    <div class="ask-input-box">
+      <span class="material-icons" style="font-size: 1.1rem; color: #666;">auto_awesome</span>
+      <input type="text" placeholder="Ask tiro anything">
+      <span class="material-icons" style="font-size: 1.1rem; color: #666;">content_copy</span>
+    </div>
+    
+    <div class="controls">
+      <button class="rec-btn" id="recBtn" onclick="toggleRecording()">
+        <span class="material-icons" style="font-size: 1rem;">mic</span>
+        <span id="recText">リアルタイム文字起こし開始</span>
+      </button>
+    </div>
+  </footer>
+</div>
+
+<script>
+  // ビューの切り替え（要約 / スクリプト）
+  function toggleView(type) {
+    const buttons = document.querySelectorAll('.pill-btn');
+    const summaryView = document.getElementById('summaryView');
+    const scriptView = document.getElementById('scriptView');
+
+    if (type === 'summary') {
+      buttons[0].classList.add('active');
+      buttons[1].classList.remove('active');
+      summaryView.style.display = 'block';
+      scriptView.style.display = 'none';
+    } else {
+      buttons[0].classList.remove('active');
+      buttons[1].classList.add('active');
+      summaryView.style.display = 'none';
+      scriptView.style.display = 'block';
+    }
+  }
+
+  // 音声認識（Web Speech API）の実装
+  let recognition;
+  let isRecording = false;
+
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US'; // 英語認識（日本語の場合は 'ja-JP'）
+
+    recognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        transcript += event.results[i][0].transcript;
+      }
+      document.getElementById('originalText').innerText = transcript;
+      // 簡易的なリアルタイム翻訳模倣
+      document.getElementById('translatedText').innerText = "（リアルタイム翻訳中...） " + transcript;
+    };
+
+    recognition.onerror = (event) => {
+      console.error("音声認識エラー:", event.error);
+    };
+  }
+
+  function toggleRecording() {
+    const recBtn = document.getElementById('recBtn');
+    const recText = document.getElementById('recText');
+
+    if (!recognition) {
+      alert("お使いのブラウザは音声認識に対応していません。（Chrome推奨）");
+      return;
+    }
+
+    if (!isRecording) {
+      recognition.start();
+      isRecording = true;
+      recBtn.classList.add('recording');
+      recText.innerText = "停止";
+    } else {
+      recognition.stop();
+      isRecording = false;
+      recBtn.classList.remove('recording');
+      recText.innerText = "リアルタイム文字起こし開始";
+    }
+  }
+</script>
+
+</body>
+</html>
