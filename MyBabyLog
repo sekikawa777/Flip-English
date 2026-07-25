@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ベビーログ＆メモリアル</title>
+  <style>
+    :root {
+      --primary-color: #ff9a9e;
+      --bg-color: #f7f9fc;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 500px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ff6b81;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+
+    input[type="date"],
+    input[type="number"],
+    textarea,
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 0.95rem;
+    }
+
+    textarea {
+      resize: vertical;
+      height: 80px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-submit:hover {
+      background-color: #ff6b81;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 25px 0;
+    }
+
+    .logs-title {
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+    }
+
+    .log-card {
+      background: #fff5f5;
+      border-left: 5px solid var(--primary-color);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .log-date {
+      font-weight: bold;
+      color: #ff6b81;
+      margin-bottom: 8px;
+    }
+
+    .log-details {
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .log-img {
+      width: 100%;
+      max-height: 250px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <h1>👶 ベビーログ</h1>
+
+    <!-- 記録入力フォーム -->
+    <form id="logForm">
+      <div class="form-group">
+        <label for="date">日付</label>
+        <input type="date" id="date" required>
+      </div>
+
+      <div class="form-group">
+        <label for="weight">体重 (kg)</label>
+        <input type="number" id="weight" step="0.01" placeholder="例: 5.25">
+      </div>
+
+      <div class="form-group">
+        <label for="milk">食事・ミルク量 (ml)</label>
+        <input type="number" id="milk" placeholder="例: 160">
+      </div>
+
+      <div class="form-group">
+        <label for="sleep">睡眠時間 (時間)</label>
+        <input type="number" id="sleep" step="0.5" placeholder="例: 12.5">
+      </div>
+
+      <div class="form-group">
+        <label for="photo">今日の1枚 (写真)</label>
+        <input type="file" id="photo" accept="image/*">
+      </div>
+
+      <div class="form-group">
+        <label for="memo">成長メモ・日記</label>
+        <textarea id="memo" placeholder="「今日はじめて笑ってくれた！」など"></textarea>
+      </div>
+
+      <button type="submit" class="btn-submit">記録を保存する</button>
+    </form>
+
+    <hr>
+
+    <!-- 記録一覧表示エリア -->
+    <h2 class="logs-title">📖 成長記録一覧</h2>
+    <div id="logsContainer"></div>
+  </div>
+
+  <script>
+    // 今日の日付を初期値にセット
+    document.getElementById('date').valueAsDate = new Date();
+
+    const logForm = document.getElementById('logForm');
+    const logsContainer = document.getElementById('logsContainer');
+
+    // 起動時に保存済みデータをロード
+    document.addEventListener('DOMContentLoaded', displayLogs);
+
+    // フォーム送信時の処理
+    logForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const date = document.getElementById('date').value;
+      const weight = document.getElementById('weight').value;
+      const milk = document.getElementById('milk').value;
+      const sleep = document.getElementById('sleep').value;
+      const memo = document.getElementById('memo').value;
+      const photoInput = document.getElementById('photo');
+
+      // 写真の読み込み処理（Base64エンコード）
+      if (photoInput.files && photoInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          saveLog(date, weight, milk, sleep, memo, e.target.result);
+        };
+        reader.readAsDataURL(photoInput.files[0]);
+      } else {
+        saveLog(date, weight, milk, sleep, memo, null);
+      }
+    });
+
+    // ローカルストレージに保存する関数
+    function saveLog(date, weight, milk, sleep, memo, photoData) {
+      const newLog = {
+        id: Date.now(),
+        date,
+        weight,
+        milk,
+        sleep,
+        memo,
+        photo: photoData
+      };
+
+      let logs = JSON.parse(localStorage.getItem('babyLogs')) || [];
+      logs.unshift(newLog); // 最新の記録を先頭に追加
+      localStorage.setItem('babyLogs', JSON.stringify(logs));
+
+      // フォームリセット＆再描画
+      logForm.reset();
+      document.getElementById('date').valueAsDate = new Date();
+      displayLogs();
+    }
+
+    // 保存された記録を画面に表示する関数
+    function displayLogs() {
+      const logs = JSON.parse(localStorage.getItem('babyLogs')) || [];
+      logsContainer.innerHTML = '';
+
+      if (logs.length === 0) {
+        logsContainer.innerHTML = '<p style="color: #888; text-align: center;">まだ記録がありません。</p>';
+        return;
+      }
+
+      logs.forEach(log => {
+        const logCard = document.createElement('div');
+        logCard.className = 'log-card';
+
+        let html = `
+          <div class="log-date">📅 ${log.date}</div>
+          <div class="log-details">
+            ${log.weight ? `⚖️ **体重:** ${log.weight} kg<br>` : ''}
+            ${log.milk ? `🍼 **食事量:** ${log.milk} ml<br>` : ''}
+            ${log.sleep ? `😴 **睡眠時間:** ${log.sleep} 時間<br>` : ''}
+            ${log.memo ? `<p style="margin: 8px 0 0 0;">📝 ${log.memo}</p>` : ''}
+          </div>
+        `;
+
+        if (log.photo) {
+          html += `<img src="${log.photo}" class="log-img" alt="成長写真">`;
+        }
+
+        logCard.innerHTML = html;
+        logsContainer.appendChild(logCard);
+      });
+    }
+  </script>
+</body>
+</html>
