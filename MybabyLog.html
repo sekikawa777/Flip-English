@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ベビーログ＆メモリアル</title>
+  <title>ベビー＆キッズ成長ログ (Firestore版)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --primary-color: #ff9a9e;
+      --accent-color: #ff6b81;
       --bg-color: #f7f9fc;
       --card-bg: #ffffff;
       --text-color: #333333;
@@ -34,11 +36,124 @@
 
     h1 {
       text-align: center;
-      color: #ff6b81;
+      color: var(--accent-color);
       font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .loading-status {
+      font-size: 0.85rem;
+      color: #888;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    /* カレンダー */
+    .calendar-container {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 12px;
       margin-bottom: 20px;
     }
 
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    .calendar-header button {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: var(--accent-color);
+      padding: 5px 10px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+
+    .day-name {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #888;
+      padding-bottom: 5px;
+    }
+
+    .day-cell {
+      padding: 8px 2px;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      cursor: pointer;
+      position: relative;
+      min-height: 32px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .day-cell:hover {
+      background-color: #f0f0f0;
+    }
+
+    .day-cell.selected {
+      background-color: var(--primary-color) !important;
+      color: white;
+      font-weight: bold;
+    }
+
+    .has-log-dot {
+      width: 5px;
+      height: 5px;
+      background-color: var(--accent-color);
+      border-radius: 50%;
+      margin-top: 2px;
+    }
+
+    .day-cell.selected .has-log-dot {
+      background-color: white;
+    }
+
+    /* モード切り替えタブ */
+    .mode-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      background: #f0f2f5;
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 8px 4px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: #ffffff;
+      color: var(--accent-color);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    /* フォーム要素 */
     .form-group {
       margin-bottom: 15px;
     }
@@ -52,6 +167,8 @@
 
     input[type="date"],
     input[type="number"],
+    input[type="text"],
+    select,
     textarea,
     input[type="file"] {
       width: 100%;
@@ -64,7 +181,20 @@
 
     textarea {
       resize: vertical;
-      height: 80px;
+      height: 70px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-top: 5px;
+    }
+
+    .checkbox-group label {
+      font-weight: normal;
+      margin-bottom: 0;
+      cursor: pointer;
     }
 
     .btn-submit {
@@ -81,7 +211,23 @@
     }
 
     .btn-submit:hover {
-      background-color: #ff6b81;
+      background-color: var(--accent-color);
+    }
+
+    .btn-submit:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .btn-delete {
+      background-color: #ff4d4f;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-top: 10px;
     }
 
     hr {
@@ -90,9 +236,22 @@
       margin: 25px 0;
     }
 
-    .logs-title {
-      font-size: 1.2rem;
+    .section-title {
+      font-size: 1.1rem;
       margin-bottom: 15px;
+      color: #444;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chart-container {
+      position: relative;
+      margin-bottom: 25px;
+      background: #fafafa;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #eee;
     }
 
     .log-card {
@@ -103,15 +262,19 @@
       margin-bottom: 15px;
     }
 
-    .log-date {
-      font-weight: bold;
-      color: #ff6b81;
-      margin-bottom: 8px;
-    }
-
     .log-details {
       font-size: 0.9rem;
-      line-height: 1.5;
+      line-height: 1.6;
+    }
+
+    .log-badge {
+      display: inline-block;
+      background: var(--accent-color);
+      color: white;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-bottom: 8px;
     }
 
     .log-img {
@@ -126,30 +289,113 @@
 <body>
 
   <div class="app-container">
-    <h1>👶 ベビーログ</h1>
+    <h1>👶 ベビー＆キッズ 成長ログ</h1>
+    <div id="statusText" class="loading-status">☁️ クラウドと同期中...</div>
 
-    <!-- 記録入力フォーム -->
+    <!-- 1. カレンダービュー -->
+    <div class="calendar-container">
+      <div class="calendar-header">
+        <button id="prevMonth">&lt;</button>
+        <span id="calendarTitle"></span>
+        <button id="nextMonth">&gt;</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+
+    <!-- 2. 選択日のログ表示エリア -->
+    <div class="section-title">
+      <span>📖 選択した日の記録</span>
+      <span id="selectedDateText" style="font-size: 0.9rem; color: #888;"></span>
+    </div>
+    <div id="selectedLogContainer"></div>
+
+    <hr>
+
+    <!-- 3. 新規・編集入力フォーム -->
+    <h2 class="section-title">📝 記録を入力・編集する</h2>
+
+    <!-- 年齢モード切り替えタブ -->
+    <div class="mode-tabs">
+      <button type="button" class="mode-btn active" data-mode="baby">🍼 0歳 (乳児)</button>
+      <button type="button" class="mode-btn" data-mode="toddler">🍱 1〜2歳 (離乳/幼児食)</button>
+      <button type="button" class="mode-btn" data-mode="child">🎨 3歳〜 (幼児)</button>
+    </div>
+
     <form id="logForm">
+      <!-- 共通: 日付 -->
       <div class="form-group">
         <label for="date">日付</label>
         <input type="date" id="date" required>
       </div>
 
+      <!-- 共通: 体重 -->
       <div class="form-group">
         <label for="weight">体重 (kg)</label>
-        <input type="number" id="weight" step="0.01" placeholder="例: 5.25">
+        <input type="number" id="weight" step="0.01" placeholder="例: 8.5">
       </div>
 
-      <div class="form-group">
-        <label for="milk">食事・ミルク量 (ml)</label>
-        <input type="number" id="milk" placeholder="例: 160">
+      <!-- 【0歳モード用項目】 -->
+      <div class="mode-fields mode-baby">
+        <div class="form-group">
+          <label for="milk">授乳・ミルク量 (ml)</label>
+          <input type="number" id="milk" placeholder="例: 160">
+        </div>
+        <div class="form-group">
+          <label for="sleep">睡眠時間 (時間)</label>
+          <input type="number" id="sleep" step="0.5" placeholder="例: 13.5">
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="sleep">睡眠時間 (時間)</label>
-        <input type="number" id="sleep" step="0.5" placeholder="例: 12.5">
+      <!-- 【1〜2歳モード用項目 (離乳食・食事チェック)】 -->
+      <div class="mode-fields mode-toddler" style="display: none;">
+        <div class="form-group">
+          <label for="mealStage">食事タイプ</label>
+          <select id="mealStage">
+            <option value="">選択してください</option>
+            <option value="離乳食 初期 (ごっくん)">離乳食 初期 (ごっくん)</option>
+            <option value="離乳食 中期 (もぐもぐ)">離乳食 中期 (もぐもぐ)</option>
+            <option value="離乳食 後期 (かみかみ)">離乳食 後期 (かみかみ)</option>
+            <option value="離乳食 完了期 (ぱくぱく)">離乳食 完了期 (ぱくぱく)</option>
+            <option value="幼児食">幼児食 (大人とほぼ同じ)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="mealAmount">食べた量</label>
+          <select id="mealAmount">
+            <option value="">選択してください</option>
+            <option value="完食！">🥣 完食！</option>
+            <option value="半分くらい">🥣 半分くらい</option>
+            <option value="あまり食べなかった">🥣 あまり食べなかった</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="newFoods">試した食材・アレルギーチェック</label>
+          <input type="text" id="newFoods" placeholder="例: 卵黄1/2、ほうれん草（食進み◎）">
+        </div>
+
+        <div class="form-group">
+          <label>習慣チェック</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="teethCheck"> 🪥 歯みがき完了</label>
+          </div>
+        </div>
       </div>
 
+      <!-- 【3歳〜モード用項目】 -->
+      <div class="mode-fields mode-child" style="display: none;">
+        <div class="form-group">
+          <label for="toiletCount">トイレ成功回数</label>
+          <input type="number" id="toiletCount" placeholder="例: 3">
+        </div>
+        <div class="form-group">
+          <label for="skills">今日のできたこと・つぶやき</label>
+          <input type="text" id="skills" placeholder="例: 靴をひとりで履けた！「〜だもん」と言っていた">
+        </div>
+      </div>
+
+      <!-- 共通: 写真 & メモ -->
       <div class="form-group">
         <label for="photo">今日の1枚 (写真)</label>
         <input type="file" id="photo" accept="image/*">
@@ -157,104 +403,384 @@
 
       <div class="form-group">
         <label for="memo">成長メモ・日記</label>
-        <textarea id="memo" placeholder="「今日はじめて笑ってくれた！」など"></textarea>
+        <textarea id="memo" placeholder="「公園で鳩を追いかけて楽しそうだった」など"></textarea>
       </div>
 
-      <button type="submit" class="btn-submit">記録を保存する</button>
+      <button type="submit" id="submitBtn" class="btn-submit">この日付で保存する</button>
     </form>
 
     <hr>
 
-    <!-- 記録一覧表示エリア -->
-    <h2 class="logs-title">📖 成長記録一覧</h2>
-    <div id="logsContainer"></div>
+    <!-- 4. 体重グラフ -->
+    <h2 class="section-title">📊 体重の推移 (kg)</h2>
+    <div class="chart-container">
+      <canvas id="weightChart"></canvas>
+    </div>
   </div>
 
-  <script>
-    // 今日の日付を初期値にセット
-    document.getElementById('date').valueAsDate = new Date();
+  <!-- Firebase SDK の読み込み (Modular SDK) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      setDoc, 
+      deleteDoc, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const logForm = document.getElementById('logForm');
-    const logsContainer = document.getElementById('logsContainer');
+    // 🔑 Firebase設定情報
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-    // 起動時に保存済みデータをロード
-    document.addEventListener('DOMContentLoaded', displayLogs);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const logsCollection = collection(db, "babyLogs");
 
-    // フォーム送信時の処理
-    logForm.addEventListener('submit', function(e) {
-      e.preventDefault();
+    let currentDate = new Date();
+    let selectedDateStr = formatDate(new Date());
+    let currentMode = 'baby';
+    let weightChart = null;
+    let allLogs = [];
 
-      const date = document.getElementById('date').value;
-      const weight = document.getElementById('weight').value;
-      const milk = document.getElementById('milk').value;
-      const sleep = document.getElementById('sleep').value;
-      const memo = document.getElementById('memo').value;
-      const photoInput = document.getElementById('photo');
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('date').value = selectedDateStr;
+      
+      // タブ切り替え処理
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          setMode(e.target.dataset.mode);
+        });
+      });
 
-      // 写真の読み込み処理（Base64エンコード）
-      if (photoInput.files && photoInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          saveLog(date, weight, milk, sleep, memo, e.target.result);
-        };
-        reader.readAsDataURL(photoInput.files[0]);
-      } else {
-        saveLog(date, weight, milk, sleep, memo, null);
-      }
+      // Firestoreからリアルタイム受信用Listener
+      onSnapshot(logsCollection, (snapshot) => {
+        allLogs = snapshot.docs.map(doc => doc.data());
+        document.getElementById('statusText').textContent = "✅ クラウドと同期済み";
+        
+        renderCalendar();
+        displaySelectedLog();
+        populateFormWithSelectedLog();
+        updateChart();
+      }, (error) => {
+        console.error("Firestore error: ", error);
+        document.getElementById('statusText').textContent = "⚠️ クラウド読み込み失敗（設定を確認してください）";
+      });
     });
 
-    // ローカルストレージに保存する関数
-    function saveLog(date, weight, milk, sleep, memo, photoData) {
-      const newLog = {
-        id: Date.now(),
-        date,
-        weight,
-        milk,
-        sleep,
-        memo,
-        photo: photoData
-      };
+    function setMode(mode) {
+      currentMode = mode;
+      
+      // ボタンのスタイル切り替え
+      document.querySelectorAll('.mode-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === mode);
+      });
 
-      let logs = JSON.parse(localStorage.getItem('babyLogs')) || [];
-      logs.unshift(newLog); // 最新の記録を先頭に追加
-      localStorage.setItem('babyLogs', JSON.stringify(logs));
-
-      // フォームリセット＆再描画
-      logForm.reset();
-      document.getElementById('date').valueAsDate = new Date();
-      displayLogs();
+      // 入力フィールドの表示・非表示切り替え
+      document.querySelectorAll('.mode-fields').forEach(el => {
+        el.style.display = 'none';
+      });
+      document.querySelector(`.mode-${mode}`).style.display = 'block';
     }
 
-    // 保存された記録を画面に表示する関数
-    function displayLogs() {
-      const logs = JSON.parse(localStorage.getItem('babyLogs')) || [];
-      logsContainer.innerHTML = '';
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
 
-      if (logs.length === 0) {
-        logsContainer.innerHTML = '<p style="color: #888; text-align: center;">まだ記録がありません。</p>';
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      document.getElementById('calendarTitle').textContent = `${year}年 ${month + 1}月`;
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      dayNames.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'day-name';
+        div.textContent = name;
+        grid.appendChild(div);
+      });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
+      const loggedDates = allLogs.map(l => l.date);
+
+      for (let i = 0; i < firstDay; i++) {
+        grid.appendChild(document.createElement('div'));
+      }
+
+      for (let day = 1; day <= lastDate; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'day-cell';
+        cell.textContent = day;
+
+        const thisDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        if (loggedDates.includes(thisDateStr)) {
+          const dot = document.createElement('div');
+          dot.className = 'has-log-dot';
+          cell.appendChild(dot);
+        }
+
+        if (thisDateStr === selectedDateStr) {
+          cell.classList.add('selected');
+        }
+
+        cell.addEventListener('click', () => {
+          selectedDateStr = thisDateStr;
+          document.getElementById('date').value = selectedDateStr;
+          renderCalendar();
+          displaySelectedLog();
+          populateFormWithSelectedLog();
+        });
+
+        grid.appendChild(cell);
+      }
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
+    document.getElementById('nextMonth').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
+
+    document.getElementById('date').addEventListener('change', (e) => {
+      selectedDateStr = e.target.value;
+      renderCalendar();
+      displaySelectedLog();
+      populateFormWithSelectedLog();
+    });
+
+    // フォームへの自動セット
+    function populateFormWithSelectedLog() {
+      const targetLog = allLogs.find(log => log.date === selectedDateStr);
+
+      if (targetLog) {
+        // 保存されていたモードに自動切替
+        if (targetLog.mode) setMode(targetLog.mode);
+
+        document.getElementById('weight').value = targetLog.weight || '';
+        document.getElementById('milk').value = targetLog.milk || '';
+        document.getElementById('sleep').value = targetLog.sleep || '';
+        document.getElementById('mealStage').value = targetLog.mealStage || '';
+        document.getElementById('mealAmount').value = targetLog.mealAmount || '';
+        document.getElementById('newFoods').value = targetLog.newFoods || '';
+        document.getElementById('teethCheck').checked = !!targetLog.teethCheck;
+        document.getElementById('toiletCount').value = targetLog.toiletCount || '';
+        document.getElementById('skills').value = targetLog.skills || '';
+        document.getElementById('memo').value = targetLog.memo || '';
+      } else {
+        // 新規入力時はフォームリセット
+        document.getElementById('weight').value = '';
+        document.getElementById('milk').value = '';
+        document.getElementById('sleep').value = '';
+        document.getElementById('mealStage').value = '';
+        document.getElementById('mealAmount').value = '';
+        document.getElementById('newFoods').value = '';
+        document.getElementById('teethCheck').checked = false;
+        document.getElementById('toiletCount').value = '';
+        document.getElementById('skills').value = '';
+        document.getElementById('memo').value = '';
+      }
+      document.getElementById('photo').value = '';
+    }
+
+    // ログ表示
+    function displaySelectedLog() {
+      document.getElementById('selectedDateText').textContent = selectedDateStr;
+      const container = document.getElementById('selectedLogContainer');
+      const targetLog = allLogs.find(log => log.date === selectedDateStr);
+      
+      container.innerHTML = '';
+
+      if (!targetLog) {
+        container.innerHTML = '<p style="color: #888; text-align: center; margin: 20px 0;">この日の記録はありません。</p>';
         return;
       }
 
-      logs.forEach(log => {
-        const logCard = document.createElement('div');
-        logCard.className = 'log-card';
+      const logCard = document.createElement('div');
+      logCard.className = 'log-card';
 
-        let html = `
-          <div class="log-date">📅 ${log.date}</div>
-          <div class="log-details">
-            ${log.weight ? `⚖️ **体重:** ${log.weight} kg<br>` : ''}
-            ${log.milk ? `🍼 **食事量:** ${log.milk} ml<br>` : ''}
-            ${log.sleep ? `😴 **睡眠時間:** ${log.sleep} 時間<br>` : ''}
-            ${log.memo ? `<p style="margin: 8px 0 0 0;">📝 ${log.memo}</p>` : ''}
-          </div>
-        `;
+      let modeTitle = '0歳ログ';
+      if (targetLog.mode === 'toddler') modeTitle = '離乳・幼児食ログ';
+      if (targetLog.mode === 'child') modeTitle = '3歳〜キッズログ';
 
-        if (log.photo) {
-          html += `<img src="${log.photo}" class="log-img" alt="成長写真">`;
+      let html = `<span class="log-badge">${modeTitle}</span>`;
+      html += `<div class="log-details">`;
+      
+      if (targetLog.weight) html += `⚖️ <strong>体重:</strong> ${targetLog.weight} kg<br>`;
+      if (targetLog.milk) html += `🍼 <strong>授乳/ミルク:</strong> ${targetLog.milk} ml<br>`;
+      if (targetLog.sleep) html += `😴 <strong>睡眠時間:</strong> ${targetLog.sleep} 時間<br>`;
+      
+      // 1〜2歳用項目
+      if (targetLog.mealStage) html += `🥗 <strong>食事タイプ:</strong> ${targetLog.mealStage}<br>`;
+      if (targetLog.mealAmount) html += `😋 <strong>食べた量:</strong> ${targetLog.mealAmount}<br>`;
+      if (targetLog.newFoods) html += `🍎 <strong>試した食材:</strong> ${targetLog.newFoods}<br>`;
+      if (targetLog.teethCheck) html += `🪥 <strong>歯みがき:</strong> 完了<br>`;
+      
+      // 3歳〜項目
+      if (targetLog.toiletCount) html += `🚽 <strong>トイレ成功:</strong> ${targetLog.toiletCount} 回<br>`;
+      if (targetLog.skills) html += `✨ <strong>できたこと:</strong> ${targetLog.skills}<br>`;
+
+      if (targetLog.memo) html += `<p style="margin: 8px 0 0 0;">📝 ${targetLog.memo}</p>`;
+      html += `</div>`;
+
+      if (targetLog.photo) {
+        html += `<img src="${targetLog.photo}" class="log-img" alt="成長写真">`;
+      }
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-delete';
+      delBtn.textContent = '🗑️ この日の記録を削除';
+      delBtn.onclick = () => deleteLog(targetLog.date);
+
+      logCard.innerHTML = html;
+      logCard.appendChild(delBtn);
+      container.appendChild(logCard);
+    }
+
+    async function deleteLog(dateStr) {
+      if (!confirm(`${dateStr} の記録を削除してもよろしいですか？`)) return;
+
+      try {
+        await deleteDoc(doc(db, "babyLogs", dateStr));
+      } catch (e) {
+        alert("削除に失敗しました: " + e.message);
+      }
+    }
+
+    function compressImage(file, maxWidth = 800) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 保存処理
+    document.getElementById('logForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '保存中...';
+
+      const date = document.getElementById('date').value;
+      const photoInput = document.getElementById('photo');
+
+      let photoData = null;
+      if (photoInput.files && photoInput.files[0]) {
+        photoData = await compressImage(photoInput.files[0]);
+      } else {
+        const existing = allLogs.find(l => l.date === date);
+        photoData = existing ? existing.photo : null;
+      }
+
+      const weightVal = document.getElementById('weight').value;
+      const milkVal = document.getElementById('milk').value;
+      const sleepVal = document.getElementById('sleep').value;
+      const toiletVal = document.getElementById('toiletCount').value;
+
+      const logData = {
+        date,
+        mode: currentMode,
+        weight: weightVal ? parseFloat(weightVal) : null,
+        milk: milkVal ? parseInt(milkVal) : null,
+        sleep: sleepVal ? parseFloat(sleepVal) : null,
+        mealStage: document.getElementById('mealStage').value || null,
+        mealAmount: document.getElementById('mealAmount').value || null,
+        newFoods: document.getElementById('newFoods').value || null,
+        teethCheck: document.getElementById('teethCheck').checked,
+        toiletCount: toiletVal ? parseInt(toiletVal) : null,
+        skills: document.getElementById('skills').value || null,
+        memo: document.getElementById('memo').value || null,
+        photo: photoData,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        await setDoc(doc(db, "babyLogs", date), logData);
+      } catch (err) {
+        alert("保存に失敗しました: " + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'この日付で保存する';
+      }
+    });
+
+    function updateChart() {
+      const validWeightLogs = [...allLogs]
+        .filter(log => log.weight !== null && log.weight !== undefined)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      const labels = validWeightLogs.map(log => log.date);
+      const data = validWeightLogs.map(log => log.weight);
+
+      const ctx = document.getElementById('weightChart').getContext('2d');
+
+      if (weightChart) {
+        weightChart.destroy();
+      }
+
+      weightChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '体重 (kg)',
+            data: data,
+            borderColor: '#ff6b81',
+            backgroundColor: 'rgba(255, 107, 129, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: '#ff6b81',
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: false,
+              title: { display: true, text: 'kg' }
+            }
+          }
         }
-
-        logCard.innerHTML = html;
-        logsContainer.appendChild(logCard);
       });
     }
   </script>
