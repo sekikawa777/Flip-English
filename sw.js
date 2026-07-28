@@ -1,7 +1,7 @@
 const CACHE_NAME = 'english-app-v1';
 const ASSETS_TO_CACHE = [
   './',
-  './English1.0.html',
+  './English1.0.html', // ← ここを English1.0（または English1.0.html）に変更
   './manifest.json'
 ];
 
