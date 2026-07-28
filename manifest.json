@@ -1,0 +1,18 @@
+{
+  "name": "英会話復習＆発音採点",
+  "short_name": "英会話",
+  "description": "英会話フレーズの暗記と発音チェックができるアプリ",
+  "start_url": "./English1.0.html",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#007bff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3898/3898150.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
